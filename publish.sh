@@ -14,8 +14,9 @@
 #   --url             just print the pacman.conf snippet for the other machine
 #   -h, --help
 #
-# One-time setup: create the repository (https://github.com/iritur/pkgs) and
-# make sure "git push" to it works from this machine.
+# One-time setup: run setup.sh, or set GG_REMOTE and GG_REMOTE_URL in
+# config.local.sh, create that repository on the host, and make sure that
+# "git push" to it works from this machine.
 
 source "$(dirname "$(readlink -f "$0")")/lib.sh"
 need_cmd git
@@ -35,6 +36,8 @@ for a in "$@"; do
     esac
 done
 
+[[ -n $GG_REMOTE ]] || die "GG_REMOTE is not set. Run setup.sh, or put it in config.local.sh"
+[[ -n $GG_REMOTE_URL ]] || die "GG_REMOTE_URL is not set. Run setup.sh, or put it in config.local.sh"
 [[ -f $GG_REPO/$GG_REPO_NAME.db.tar.zst ]] || die "no local repo at $GG_REPO (nothing built yet)"
 mapfile -t pkgs < <(find "$GG_REPO" -maxdepth 1 -name '*.pkg.tar.*' ! -name '*.sig' | sort)
 (( ${#pkgs[@]} )) || die "no packages in $GG_REPO"
@@ -134,7 +137,14 @@ for f in "$dest"/*; do
 done
 
 siglevel="Optional TrustAll"
-(( SIGN )) && siglevel="Required DatabaseOptional"
+SIGNOTE="Packages are unsigned. \`SigLevel = Optional TrustAll\` tells pacman to
+  trust whatever this URL serves. The transport is HTTPS, so the trust is in
+  the GitHub account that publishes it."
+if (( SIGN )); then
+    siglevel="Required DatabaseOptional"
+    SIGNOTE="Packages are signed. Import the publisher's GPG key and locally
+  sign it (\`pacman-key --lsign-key\`) before installing."
+fi
 
 # turn exclude.list globs into one anchored regex for the remote installer
 exclude_re=$(sed 's/#.*//; s/[[:space:]]//g' "$GG_ROOT/exclude.list" 2>/dev/null |
@@ -208,41 +218,117 @@ MSG
 INSTALLER
 chmod +x "$GG_PUBLISH/install-gnome-git.sh"
 
+# where the toolkit itself lives, if this directory is a checkout of it
+project_url=$(git -C "$GG_ROOT" remote get-url origin 2>/dev/null |
+              sed -E 's#^git@github\.com:#https://github.com/#; s#\.git$##')
+
 cat > "$GG_PUBLISH/README.md" <<READDME
 # $GG_REPO_NAME
 
-GNOME built from git (gitlab.gnome.org main branches) as Arch Linux packages,
-using the official Arch PKGBUILDs re-pointed at those checkouts.
+GNOME built from the development branches at gitlab.gnome.org, packaged with
+the official Arch Linux PKGBUILDs pointed at those checkouts. Install it with
+pacman on any x86_64 Arch machine. Nothing is compiled on your side.
 
-Updated: $(date -u '+%Y-%m-%d %H:%M UTC') - ${#pkgs[@]} packages.
+**${#pkgs[@]} packages, updated $(date -u '+%Y-%m-%d %H:%M UTC').**
 
-## Install on another Arch machine
+## Before you start
 
-    curl -fLO $GG_REMOTE_URL/install-gnome-git.sh
-    less install-gnome-git.sh      # read it before running it
-    bash install-gnome-git.sh --all
+This is unreleased GNOME. It is rebuilt whenever upstream moves, it does not
+get the testing Arch gives its own packages, and it can break in ways a stable
+desktop does not. A spare machine or a virtual machine is the sensible place
+for it. Uninstalling is supported and described at the end.
 
-Or register it by hand in \`/etc/pacman.conf\`, above \`[core]\` and \`[extra]\`
-so these packages take precedence:
+You need:
 
-    [$GG_REPO_NAME]
-    SigLevel = $siglevel
-    Server = $GG_REMOTE_URL/\$arch
+- Arch Linux, x86_64.
+- An up-to-date system. Run \`sudo pacman -Syu\` and reboot first. These
+  packages are linked against current Arch libraries, so on an old install
+  pacman will either drag in half the distribution or refuse the transaction.
+- Roughly 2 GB free for the packages and their dependencies.
 
-Then \`sudo pacman -Syu\`.
+## Install
+
+\`\`\`bash
+curl -fLO $GG_REMOTE_URL/install-gnome-git.sh
+less install-gnome-git.sh      # it edits pacman.conf and calls sudo; read it
+bash install-gnome-git.sh --all
+\`\`\`
+
+The script adds this repository to \`/etc/pacman.conf\` above \`[core]\` and
+\`[extra]\`, so its packages win over the Arch ones, keeps a backup of the file,
+then syncs and installs. Without \`--all\` it only upgrades the GNOME packages
+you already have.
+
+To do it by hand instead, put this above \`[core]\` in \`/etc/pacman.conf\`:
+
+\`\`\`
+[$GG_REPO_NAME]
+SigLevel = $siglevel
+Server = $GG_REMOTE_URL/\$arch
+\`\`\`
+
+then run \`sudo pacman -Syu\`.
+
+## Getting to a desktop
+
+\`\`\`bash
+sudo pacman -S --needed networkmanager
+sudo systemctl enable --now NetworkManager gdm
+\`\`\`
+
+NetworkManager is only an optional dependency of the control center, so
+without it the shell's network menu stays dead. Enabling gdm brings up the
+login screen straight away; a reboot is cleaner for the first run.
+
+If the session fails to start, switch to a console with Ctrl+Alt+F2 and read
+\`journalctl -b -u gdm\`. \`sudo systemctl disable --now gdm\` returns you to a
+text login.
+
+## What is in here
+
+The GNOME platform (glib, gtk4, libadwaita, gobject-introspection and the
+rest), the shell and session (mutter, gnome-shell, gdm, gnome-session, the
+settings daemon, the control center), the core applications, and the
+development tools including Builder. Everything else the system needs, the
+kernel, mesa, pipewire, systemd, comes from the official Arch repositories as
+ordinary dependencies.
+
+Deliberately left out: API documentation and the help manual, the GTK and
+libadwaita demo programs, the vte sample terminals, and \`gvfs-dnssd\`.
+
+## Updating
+
+\`\`\`bash
+sudo pacman -Syu
+\`\`\`
+
+The repository sits above \`[core]\`, so these builds keep winning even when
+Arch ships a numerically newer release.
 
 ## Going back to stock Arch
 
-    bash install-gnome-git.sh --remove
-    sudo pacman -Syuu
+\`\`\`bash
+bash install-gnome-git.sh --remove
+sudo pacman -Syuu
+\`\`\`
 
-## Caveats
+The first command unregisters the repository, the second downgrades everything
+to the official packages.
 
-These are development snapshots of GNOME, rebuilt whenever the upstream code
-moves. They are not tested the way Arch tests its packages, and $( (( SIGN )) || printf 'they are
-unsigned, so pacman is told to trust the repository ("TrustAll"); the transport
-is HTTPS, but the trust is in this GitHub account' )$( (( SIGN )) && printf 'they are signed with
-the publisher GPG key, which you must import and locally sign first' ).
+## Things worth knowing
+
+- $SIGNOTE
+- Version numbers read \`51.0.r2.geb74a99\`: the last tag, the number of commits
+  since it, and the commit id. They sort above the matching Arch release.
+- Just after an update here, \`raw.githubusercontent.com\` can serve a cached
+  package database for a few minutes. If pacman reports 404s on package files,
+  wait five minutes and run \`sudo pacman -Syy\`.
+${project_url:+
+## How these are built
+
+The build tooling is at <$project_url>. It takes the official Arch PKGBUILDs,
+repoints their sources at local git checkouts, derives the version from git,
+and builds them with makepkg into a pacman repository.}
 READDME
 
 # --------------------------------------------------------------------- push

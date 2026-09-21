@@ -328,7 +328,7 @@ github_token() {
 
 # write_remote GIT-URL SLUG - point config.sh at the chosen repository
 write_remote() {
-    local url=$1 slug=$2 conf="$GG_ROOT/config.sh" raw
+    local url=$1 slug=$2 conf="$GG_ROOT/config.local.sh" raw
     raw="https://raw.githubusercontent.com/$slug/$GG_REMOTE_BRANCH"
     if [[ $GG_REMOTE == "$url" && $GG_REMOTE_URL == "$raw" ]]; then
         ok "config.sh already points at $slug"
@@ -339,11 +339,12 @@ write_remote() {
     info "fetch URL: $raw  (what pacman on other machines uses)"
     ask "Write that into $conf?" || return 0
     (( CHECK )) && return 0
-    cp -f "$conf" "$conf.bak"
-    # config.sh interpolates $GG_REMOTE_BRANCH itself, so leave it unexpanded
-    sed -i -E "s|^: \"\\\$\{GG_REMOTE:=.*\}\"|: \"\${GG_REMOTE:=$url}\"|" "$conf"
-    sed -i -E "s|^: \"\\\$\{GG_REMOTE_URL:=.*\}\"|: \"\${GG_REMOTE_URL:=https://raw.githubusercontent.com/$slug/\$GG_REMOTE_BRANCH}\"|" "$conf"
-    ok "written (previous version saved as config.sh.bak)"
+    [[ -f $conf ]] && cp -f "$conf" "$conf.bak"
+    touch "$conf"
+    sed -i '/^GG_REMOTE=/d; /^GG_REMOTE_URL=/d' "$conf"
+    { printf 'GG_REMOTE=%s\n' "$url"
+      printf 'GG_REMOTE_URL=%s\n' "$raw"; } >> "$conf"
+    ok "written to ${conf##*/}, which is never committed"
 }
 
 # ===================================================================== main

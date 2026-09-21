@@ -9,3 +9,7 @@ logs/
 state/
 *.log
 missing-sources.txt
+
+# personal settings for this machine
+config.local.sh
+config.local.sh.bak

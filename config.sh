@@ -1,6 +1,7 @@
 # config.sh - paths and knobs for the gnome-git toolkit.
 # Sourced by lib.sh. Every variable can also be overridden from the
-# environment (e.g. GG_SRC=/mnt/gnome/checkouts ./build.sh).
+# environment (e.g. GG_SRC=/srv/gnome ./build.sh), or set for good in
+# config.local.sh next to this file, which is never committed.
 #
 # The directory that contains these scripts is the toolkit root (GG_ROOT).
 # Put the whole directory on the SCSI drive so that sources, PKGBUILDs,
@@ -54,12 +55,13 @@
 # Remote package repository (publish.sh). The packages are published as plain
 # files in a git branch, not as release assets, because GitHub rewrites
 # characters in asset names and 18 of our packages carry an epoch ("gjs-2:...").
-: "${GG_REMOTE:=git@github.com:iritur/pkgs.git}"
+# Set these in config.local.sh, or let setup.sh write them for you.
+: "${GG_REMOTE:=}"
 : "${GG_REMOTE_BRANCH:=arch}"
 # What pacman on the other machine talks to. raw.githubusercontent serves any
 # file in the branch with no extra setup; GitHub Pages works the same way if
-# you enable it for the branch (https://<user>.github.io/pkgs/$arch).
-: "${GG_REMOTE_URL:=https://raw.githubusercontent.com/iritur/pkgs/$GG_REMOTE_BRANCH}"
+# you enable it for the branch (https://<user>.github.io/<repo>/$arch).
+: "${GG_REMOTE_URL:=}"
 : "${GG_PUBLISH:=$GG_ROOT/publish}"
 
 # Git ref built when a module line does not name one.
@@ -67,3 +69,7 @@
 
 # Parallelism for the build machine.
 : "${GG_JOBS:=$(nproc)}"
+
+# Personal settings live here and are never committed: paths, the remote
+# repository, GG_JOBS, anything above. Created by setup.sh, or by hand.
+[[ -r $GG_ROOT/config.local.sh ]] && source "$GG_ROOT/config.local.sh"
