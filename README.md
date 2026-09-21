@@ -1,5 +1,7 @@
 # gnome-git: latest GNOME from your git checkouts, as Arch packages
 
+Source: <https://github.com/iritur/gnome-git>
+
 Builds the GNOME stack from the git checkouts on the SCSI drive into a local
 pacman repository, using the **official Arch PKGBUILDs** re-pointed at your
 sources. Dependencies are resolved by pacman, the result installs and
@@ -48,6 +50,24 @@ sub-directories under `GG_SRC` are found automatically.
    relative to themselves).
 3. Build machine: `sudo pacman -S --needed base-devel git ccache` and a user
    with sudo rights (pacman installs dependencies during the build).
+
+## Leaving packages out of the installed system
+
+`exclude.list` names packages that are built but never installed, as shell
+globs. `install.sh --all`, the installer published for other machines, and
+`publish.sh --lean` all honour it. The defaults drop API documentation and the
+Help manual (about 106 MB), the GTK and libadwaita demos (gtk4-demo,
+gtk4-widget-factory, gtk4-print-editor, gtk4-node-editor), the vte sample
+terminals, and `gvfs-dnssd`. That is 37 of 155 packages, and `--lean` shrinks
+a publish from 306 MB to 190 MB.
+
+Two notes on things that look like they should be excludable but are not.
+`tinysparql` depends on avahi outright and desktop search needs tinysparql, so
+avahi arrives unless you give up search; installing it does not start it, and
+`systemctl mask avahi-daemon.service avahi-daemon.socket` keeps it quiet.
+Glade, xterm and Qt are not runtime dependencies of anything built here: they
+appear on the build machine only, pulled in by libpeas and vte at build time,
+and never reach the machine that runs GNOME.
 
 ## First-time setup of this machine
 
