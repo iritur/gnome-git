@@ -1,0 +1,126 @@
+# modules.list - what to build, in dependency order.
+#
+#   [tier]                                  tier name used to select groups
+#   pkgbase  [repo]  [ref]  [clone-url]     '-' or omitted = default
+#
+#   pkgbase   Arch package base (name of the Arch packaging repo)
+#   repo      upstream git project name (default: same as pkgbase)
+#   ref       branch, tag or commit to build (default: GG_DEFAULT_REF = main)
+#   url       clone URL (default: https://gitlab.gnome.org/GNOME/<repo>.git)
+#
+# Everything not commented out is built by "build.sh" with no arguments.
+# Later modules are built against the git versions of earlier ones, so keep
+# the order. Comment out what you do not need; run "fetch.sh check" after
+# editing to make sure names resolve.
+
+[platform]
+glib2                     glib
+gobject-introspection
+libsoup3                  libsoup
+json-glib
+gsettings-desktop-schemas
+pango
+gtk4                      gtk
+libadwaita
+gtksourceview5            gtksourceview
+vte3                      vte
+gcr-4                     gcr
+libsecret
+dconf
+gjs
+libpeas-2                 libpeas       # libpeas main is 2.x and needs gjs
+libdex
+libspelling
+# libmanette main breaks the ABI that the stock webkitgtk links against, and
+# every webkit user then fails to link. Leave it to Arch (or rebuild webkitgtk).
+#libmanette
+libshumate
+libgweather-4             libgweather
+gnome-desktop
+gnome-online-accounts
+evolution-data-server
+libgtop
+gnome-bluetooth-3.0       gnome-bluetooth
+tinysparql
+localsearch
+gvfs
+gnome-autoar
+gexiv2
+
+[core]
+adwaita-icon-theme
+gnome-backgrounds
+gnome-menus
+gnome-settings-daemon
+mutter
+gnome-shell
+gnome-shell-extensions
+gnome-session
+gnome-control-center
+gdm
+nautilus
+papers            # before sushi: sushi links papers-document
+sushi
+xdg-desktop-portal-gnome
+gnome-keyring
+gnome-user-share
+gnome-remote-desktop
+gnome-initial-setup
+gnome-user-docs
+orca
+gnome-tour
+
+[apps]
+gnome-text-editor
+gnome-console             console
+gnome-calculator
+gnome-calendar
+gnome-contacts
+gnome-clocks
+gnome-weather
+gnome-maps
+gnome-music
+gnome-characters
+gnome-font-viewer
+gnome-logs
+gnome-disk-utility
+gnome-system-monitor
+gnome-tweaks
+loupe
+snapshot
+decibels
+showtime
+baobab
+file-roller
+simple-scan
+yelp
+epiphany
+gnome-software
+gnome-connections
+
+[devel]
+# Development platform and tooling, built after the desktop so that a broken
+# tool here cannot block a working session. Order is dependency order.
+vala                                    # many packages compile Vala; risky from git
+gi-docgen
+gtk-doc
+blueprint-compiler
+template-glib
+jsonrpc-glib
+libgit2-glib
+libpanel
+gom            # vte4 is a split package of vte3, already built above
+sysprof
+glycin
+d-spy
+devhelp
+gnome-builder
+ptyxis                    ptyxis   -    https://gitlab.gnome.org/chergert/ptyxis.git
+gnome-terminal
+
+[extra]
+# Heavier or rarely wanted; enable as needed.
+#gnome-boxes              # pulls in the whole qemu/virt stack
+#gnome-usage
+#gnome-color-manager
+# cambalache is AUR-only, so there is no official PKGBUILD to base it on

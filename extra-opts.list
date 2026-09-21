@@ -1,0 +1,13 @@
+# extra-opts.list - extra meson options per Arch pkgbase.
+# arch-meson configures with --auto-features enabled, so a feature that
+# upstream main newly made optional becomes REQUIRED and the build stops on a
+# dependency Arch never wanted. Set the option here the way Arch sets it for
+# comparable packages. Options meson does not know are dropped automatically.
+#
+#   pkgbase   -D opt=value [-D opt=value ...]
+gnome-user-share   -D selinux=disabled
+# gom main added a PostgreSQL backend; Arch's gom links only sqlite, and
+# enabling it would pull in the pgsql-glib subproject and libpq
+# gom main renamed enable-gtk-doc to docs; without it no documentation is
+# built and package_gom-docs has nothing to move
+gom                -D postgresql-backend=disabled -D docs=true

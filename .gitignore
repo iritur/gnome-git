@@ -1,0 +1,11 @@
+# Everything below is generated or downloaded: sources, package caches and
+# build output. Only the toolkit itself belongs in git.
+repo/
+pkgcache/
+cargo-home/
+pkgbuilds/
+publish/
+logs/
+state/
+*.log
+missing-sources.txt

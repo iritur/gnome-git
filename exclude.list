@@ -1,0 +1,33 @@
+# exclude.list - packages that must NOT be installed on the machine that runs
+# GNOME. Shell glob patterns, one per line, '#' starts a comment.
+#
+# They are still built (they come out of the same PKGBUILD as the packages you
+# do want), but install.sh --all, the installer published for other machines,
+# and publish.sh --lean all skip them.
+#
+# Already installed one by mistake? Remove it with:  sudo pacman -Rs <name>
+
+# API documentation: about 106 MB, and gnome-user-docs is the Help manual
+*-docs
+*-doc
+
+# demo and example programs: gtk4-demo, gtk4-widget-factory,
+# gtk4-print-editor, gtk4-node-editor, and the libadwaita demo
+gtk4-demos
+libadwaita-demos
+
+# the vte sample terminals (vte-2.91, vte-2.91-gtk4). The vte3/vte4 libraries
+# themselves stay: Console and Ptyxis are built on them
+vte3-utils
+vte4-utils
+
+# mDNS/DNS-SD network browsing in Files, the only optional avahi user.
+# Note: tinysparql depends on avahi outright, and desktop search needs
+# tinysparql, so avahi still arrives unless you drop search entirely.
+# Installing it does not start it; mask the service if you want it silent:
+#   sudo systemctl mask avahi-daemon.service avahi-daemon.socket
+gvfs-dnssd
+
+# Glade, xterm and Qt are not runtime dependencies of anything built here.
+# They appear on the BUILD machine only, as build dependencies of libpeas and
+# vte, and never reach the release system.

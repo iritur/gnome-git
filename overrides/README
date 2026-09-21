@@ -1,0 +1,7 @@
+Put a directory named after the Arch pkgbase here (overrides/<pkgbase>/PKGBUILD
+plus any patches / .install files) to replace the official Arch PKGBUILD for
+that module. build.sh still rewrites its git sources to the drive and
+generates pkgver(), so keep the upstream repo in source=() as a git+ URL.
+
+Typical reasons: an Arch patch no longer applies to main, the official
+package is built from a release tarball, or you want extra meson options.

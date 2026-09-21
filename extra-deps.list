@@ -1,0 +1,11 @@
+# extra-deps.list - additional makedepends per Arch pkgbase.
+# Upstream main regularly gains optional dependencies that arch-meson turns
+# into required ones (--auto-features enabled) before Arch's PKGBUILD lists
+# them. Add them here; fetch.sh deps downloads them, build.sh installs them.
+#
+#   pkgbase   dep [dep ...]
+localsearch   libmediainfo
+# gjs main added a WebAssembly test that needs wat2wasm from wabt
+gjs           wabt
+# gtk-doc main runs its test suite through python-parameterized
+gtk-doc       python-parameterized

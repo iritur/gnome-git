@@ -1,0 +1,23 @@
+# Override: upstream switched from autotools to meson; Arch's PKGBUILD still
+# runs ./autogen.sh. build.sh rewrites source= and pkgver() as usual.
+pkgname=gnome-user-docs
+pkgver=50.5
+pkgrel=1
+pkgdesc="User documentation for GNOME"
+url="https://gitlab.gnome.org/GNOME/gnome-user-docs"
+arch=(any)
+license=(CC-BY-3.0)
+depends=(yelp)
+makedepends=(git meson yelp-tools)
+groups=(gnome)
+source=("git+$url.git")
+b2sums=('SKIP')
+
+build() {
+  arch-meson $pkgname build -D tests=false
+  meson compile -C build
+}
+
+package() {
+  meson install -C build --destdir "$pkgdir"
+}
