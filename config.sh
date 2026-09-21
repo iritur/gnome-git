@@ -10,7 +10,9 @@
 # Where your GNOME git checkouts live (one directory per project, e.g.
 # $GG_SRC/gnome-shell, $GG_SRC/glib ...). Bare clones (name.git) and one
 # level of sub-directories ($GG_SRC/GNOME/glib) are found as well.
-: "${GG_SRC:=/mnt/gnome/gnome}"
+# fetch.sh clones whatever is missing, so an empty directory is a fine start.
+# Point this somewhere else in config.local.sh if your checkouts already exist.
+: "${GG_SRC:=$GG_ROOT/src}"
 
 # Clones of the official Arch packaging repos (one per pkgbase).
 : "${GG_PKGBUILDS:=$GG_ROOT/pkgbuilds}"
