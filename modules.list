@@ -55,6 +55,7 @@ gnome-settings-daemon
 mutter
 gnome-shell
 gnome-shell-extensions
+gnome-extensions-app                    # the Extensions app
 gnome-session
 gnome-control-center
 gdm
