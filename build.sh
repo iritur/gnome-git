@@ -69,6 +69,11 @@ MAKEPKG_CONF="$GG_WORK/makepkg.conf"
 {
     echo 'source /etc/makepkg.conf'
     echo "MAKEFLAGS=\"-j$GG_JOBS\""
+    # ninja and cargo do not read MAKEFLAGS. ninja already defaults to all
+    # cores, but PKGBUILDs that pass NINJAFLAGS get the same number, and cargo
+    # is told explicitly rather than left to guess inside a container.
+    echo "NINJAFLAGS=\"-j$GG_JOBS\""
+    echo "export CARGO_BUILD_JOBS=$GG_JOBS"
     echo "SRCDEST='$GG_WORK/srcdest'"
     echo "PKGDEST='$GG_REPO'"
     echo "LOGDEST='$GG_LOGS'"
@@ -539,7 +544,12 @@ for m in "${modules[@]}"; do
     # Rebuild when the source commit moved OR when the packaging changed:
     # switching to Arch's gnome-unstable branch rewrites dependencies, split
     # packages and sonames, none of which the commit id reflects.
-    pbhash=$(sha256sum "$pkgdir/PKGBUILD" | cut -d' ' -f1)
+    # Hash only the part that decides what gets built: Arch's PKGBUILD as we
+    # rewrote it, plus this package's extra deps and options. The helper block
+    # we append starts at the marker and is excluded, so editing build.sh no
+    # longer invalidates every module and forces a full rebuild.
+    pbhash=$( { sed '/^# >>> gnome-git:/,$d' "$pkgdir/PKGBUILD"
+                extra_deps "$pkgbase"; extra_opts "$pkgbase"; } | sha256sum | cut -d' ' -f1)
     buildno=0
     if [[ -f $GG_STATE/$pkgbase ]]; then
         read -r old_sha _ _ old_pbhash old_buildno < "$GG_STATE/$pkgbase"

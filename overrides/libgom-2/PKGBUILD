@@ -1,0 +1,47 @@
+# gom from git, packaged as libgom-2 so it can sit next to Arch's gom.
+#
+# Upstream rewrote gom: the library is libgom-2.so, the pkg-config module is
+# libgom-2, and the old ORM surface is gone. Of the 65 gom functions
+# gnome-builder's manuals plugin calls, 64 no longer exist, so replacing
+# Arch's gom breaks Builder outright. The two install into disjoint paths, so
+# this builds the new one under its own package name and leaves gom 1.0 alone.
+#
+# The only overlap is the Python override, which is dropped below.
+
+pkgname=libgom-2
+pkgver=0
+pkgrel=1
+pkgdesc="GObject to SQLite object mapper (gom 2, co-installable with gom 1.0)"
+url="https://gitlab.gnome.org/GNOME/gom"
+arch=(x86_64)
+license=(LGPL-2.1-or-later)
+depends=(
+  glib2
+  glibc
+  sqlite
+)
+makedepends=(
+  gi-docgen
+  git
+  gobject-introspection
+  meson
+  python-gobject
+  vala
+)
+provides=(libgom-2.so)
+source=("git+https://gitlab.gnome.org/GNOME/gom.git")
+b2sums=('SKIP')
+
+build() {
+  arch-meson gom build
+  meson compile -C build
+}
+
+package() {
+  meson install -C build --destdir "$pkgdir"
+
+  # Arch's gom ships the same file; keep the packages co-installable
+  rm -rf "$pkgdir"/usr/lib/python*/site-packages/gi/overrides
+}
+
+# vim:set sw=2 sts=-1 et:

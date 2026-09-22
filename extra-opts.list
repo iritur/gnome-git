@@ -10,4 +10,4 @@ gnome-user-share   -D selinux=disabled
 # enabling it would pull in the pgsql-glib subproject and libpq
 # gom main renamed enable-gtk-doc to docs; without it no documentation is
 # built and package_gom-docs has nothing to move
-gom                -D postgresql-backend=disabled -D docs=true
+libgom-2           -D postgresql-backend=disabled -D docs=true

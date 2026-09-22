@@ -94,7 +94,11 @@ step_pkgbuilds() {
     local m pkgbase repo ref url tier
     for m in "${modules[@]}"; do
         read -r pkgbase repo ref url tier <<<"$m"
-        if git_update "$GG_PKGBUILDS/$pkgbase" "$GG_ARCH_PKG_URL/$pkgbase.git" "PKGBUILD $pkgbase"; then
+        # a hand-written override replaces Arch's packaging, and for packages
+        # Arch does not have (libgom-2) there is nothing to clone
+        if [[ -f $GG_OVERRIDES/$pkgbase/PKGBUILD ]]; then
+            msg2 "$pkgbase: using overrides/$pkgbase, no Arch packaging needed"
+        elif git_update "$GG_PKGBUILDS/$pkgbase" "$GG_ARCH_PKG_URL/$pkgbase.git" "PKGBUILD $pkgbase"; then
             # build from the branch whose packaging matches the code we build
             ref=$(pick_pkgbuild_ref "$GG_PKGBUILDS/$pkgbase")
             if ! git -C "$GG_PKGBUILDS/$pkgbase" checkout -q --force --detach "$ref" 2>/dev/null; then

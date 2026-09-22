@@ -109,7 +109,10 @@ template-glib
 jsonrpc-glib
 libgit2-glib
 libpanel
-gom            # vte4 is a split package of vte3, already built above
+# gom from git installs as libgom-2 (see overrides/libgom-2) so that it sits
+# beside Arch's gom 1.0. Upstream rewrote the API and gnome-builder still
+# needs the old one, so replacing it would stop Builder from starting.
+libgom-2                  gom
 sysprof
 glycin
 d-spy
