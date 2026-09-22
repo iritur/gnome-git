@@ -45,18 +45,6 @@ need_cmd git makepkg pacman repo-add vercmp
 mapfile -t modules < <(select_modules "${sel[@]}")
 (( ${#modules[@]} || REMOVE )) || die "no modules selected"
 
-if (( LIST )); then
-    printf '%-26s %-9s %-8s %-8s %s\n' MODULE TIER REF HEAD LAST-BUILT
-    for m in "${modules[@]}"; do
-        read -r pkgbase repo ref url tier <<<"$m"
-        head=-; built=-
-        dir=$(find_src_dir "$repo") && head=$(resolve_ref "$dir" "$ref" | cut -c1-7 || echo NOREF)
-        [[ -f $GG_STATE/$pkgbase ]] && built=$(cut -c1-7 "$GG_STATE/$pkgbase")
-        printf '%-26s %-9s %-8s %-8s %s\n' "$pkgbase" "$tier" "$ref" "$head" "$built"
-    done
-    exit 0
-fi
-
 mkdir -p "$GG_WORK"/{pkg,srcdest,ccache} "$GG_REPO" "$GG_LOGS" "$GG_STATE"
 
 if [[ $(stat -c %u "$GG_SRC") != "$(id -u)" ]]; then
@@ -100,7 +88,7 @@ sync_repos() {
         return 1
     fi
 }
-if (( ! GEN_ONLY )); then
+if (( ! GEN_ONLY && ! LIST )); then
     sudo_keepalive
     if [[ -e /var/lib/pacman/db.lck ]]; then
         if pgrep -x pacman >/dev/null; then
@@ -155,6 +143,75 @@ for m in "${modules[@]}"; do
     for n in $(srcinfo_field "$(srcinfo "$d")" pkgname); do OURS[$n]=1; done
 done
 
+# strip_ours FILE - drop version constraints on packages we build ourselves.
+# A git version such as 51.alpha.r12 would be rejected against mutter>=51.0,
+# and the exact-version ties between split packages of one PKGBUILD
+# (libgoa=$pkgver-$pkgrel) can never be met either: dependencies are resolved
+# before pkgver() has replaced the released version with the git one. Lines
+# carrying a -D option are left alone, so a meson option that shares a name
+# with one of our packages survives ("-D sysprof=enabled").
+strip_ours() {
+    local n
+    for n in "${!OURS[@]}"; do
+        sed -i -E "/-D/!{ s/(^|[[:space:](\"'])(${n//[.+]/\\&})(>=|<=|>|<|=)[^\"'[:space:])]+/\1\2/g }" "$1"
+    done
+}
+
+# pkgbuild_hash PKGBASE - the same hash the build loop compares against, without
+# generating the package directory: the stripped PKGBUILD plus its extra deps
+# and options. The helper block we append is deliberately not part of it.
+pkgbuild_hash() {
+    local pkgbase=$1 from tmp
+    from=$(pkgbuild_dir "$pkgbase") || return 1
+    tmp=$(mktemp) || return 1
+    cp -f "$from/PKGBUILD" "$tmp"
+    strip_ours "$tmp"
+    # the blank line matches the one gen_pkgbuild leaves before its marker, so
+    # this is byte for byte what the generated PKGBUILD holds above it
+    { cat "$tmp"; echo; extra_deps "$pkgbase"; extra_opts "$pkgbase"; } |
+        sha256sum | cut -d' ' -f1
+    rm -f "$tmp"
+}
+
+if (( LIST )); then
+    printf '  %-26s %-9s %-8s %-8s %s\n' MODULE TIER REF HEAD STATUS
+    n_build=0; n_skip=0
+    for m in "${modules[@]}"; do
+        read -r pkgbase repo ref url tier <<<"$m"
+        head=- ; status=""; mark=" "
+        if ! dir=$(find_src_dir "$repo"); then
+            status="no checkout for $repo"
+        elif ! sha=$(resolve_ref "$dir" "$ref"); then
+            status="ref '$ref' not found"
+        else
+            head=${sha:0:7}
+            if ! pkgbuild_dir "$pkgbase" >/dev/null; then
+                status="no PKGBUILD"
+            elif (( FORCE )); then
+                status="forced"
+            elif [[ ! -f $GG_STATE/$pkgbase ]]; then
+                status="never built"
+            else
+                read -r old_sha _ _ old_pbhash _ < "$GG_STATE/$pkgbase"
+                if [[ $old_sha != "$sha" ]]; then
+                    status="source moved from ${old_sha:0:7}"
+                elif [[ $old_pbhash != "$(pkgbuild_hash "$pkgbase")" ]]; then
+                    status="packaging changed"
+                fi
+            fi
+        fi
+        if [[ -z $status ]]; then
+            n_skip=$(( n_skip + 1 ))
+            printf '  %-26s %-9s %-8s %-8s \e[2m%s\e[0m\n' "$pkgbase" "$tier" "$ref" "$head" "up to date"
+        else
+            n_build=$(( n_build + 1 ))
+            printf '\e[1;32m*\e[0m %-26s %-9s %-8s %-8s \e[1m%s\e[0m\n' "$pkgbase" "$tier" "$ref" "$head" "$status"
+        fi
+    done
+    printf '\n\e[1;32m*\e[0m %s to build, %s up to date\n' "$n_build" "$n_skip"
+    exit 0
+fi
+
 # gen_pkgbuild PKGBASE REPO SHA -> writes $GG_WORK/pkg/PKGBASE, prints primary dir name
 gen_pkgbuild() {
     local pkgbase=$1 repo=$2 sha=$3
@@ -192,16 +249,7 @@ gen_pkgbuild() {
     done < <(srcinfo_field "$info" source)
     [[ -n $primary ]] || return 4
 
-    # Drop version constraints on packages we build ourselves. A git version
-    # such as 51.alpha.r12 would be rejected against mutter>=51.0, and the
-    # exact-version ties between split packages of one PKGBUILD
-    # (libgoa=$pkgver-$pkgrel) can never be met either: dependencies are
-    # resolved before pkgver() has replaced the released version with the git
-    # one. Lines carrying a -D option are left alone, so a meson option that
-    # shares a name with one of our packages survives ("-D sysprof=enabled").
-    for n in "${!OURS[@]}"; do
-        sed -i -E "/-D/!{ s/(^|[[:space:](\"'])(${n//[.+]/\\&})(>=|<=|>|<|=)[^\"'[:space:])]+/\1\2/g }" "$dest/PKGBUILD"
-    done
+    strip_ours "$dest/PKGBUILD"
 
     {
         printf '\n# >>> gnome-git: generated by build.sh, do not edit >>>\n'
@@ -546,10 +594,9 @@ for m in "${modules[@]}"; do
     # packages and sonames, none of which the commit id reflects.
     # Hash only the part that decides what gets built: Arch's PKGBUILD as we
     # rewrote it, plus this package's extra deps and options. The helper block
-    # we append starts at the marker and is excluded, so editing build.sh no
-    # longer invalidates every module and forces a full rebuild.
-    pbhash=$( { sed '/^# >>> gnome-git:/,$d' "$pkgdir/PKGBUILD"
-                extra_deps "$pkgbase"; extra_opts "$pkgbase"; } | sha256sum | cut -d' ' -f1)
+    # we append is excluded, so editing build.sh no longer invalidates every
+    # module. --list computes this the same way, through the same function.
+    pbhash=$(pkgbuild_hash "$pkgbase")
     buildno=0
     if [[ -f $GG_STATE/$pkgbase ]]; then
         read -r old_sha _ _ old_pbhash old_buildno < "$GG_STATE/$pkgbase"

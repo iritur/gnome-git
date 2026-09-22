@@ -152,7 +152,7 @@ Restrict to modules or tiers: `./fetch.sh sources gnome-shell mutter`, `./fetch.
 ./build.sh --from gnome-shell   # resume a run
 ./build.sh --force gtk4   # rebuild even if the commit is unchanged
 ./build.sh --gen-only     # just generate PKGBUILDs into ~/.cache/gnome-git/pkg
-./build.sh --list         # selection, HEAD commit, last built commit
+./build.sh --list         # what would be built, and why, marked with *
 ```
 The build installs each package before building the next so later modules
 compile against the git versions of earlier ones. Modules whose commit has
