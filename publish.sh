@@ -302,8 +302,10 @@ libadwaita demo programs, the vte sample terminals, and \`gvfs-dnssd\`.
 sudo pacman -Syu
 \`\`\`
 
-The repository sits above \`[core]\`, so these builds keep winning even when
-Arch ships a numerically newer release.
+These packages carry a raised epoch, which is what keeps them ahead of the
+Arch ones. Repository order alone would not: pacman installs the highest
+version it can see, and a build of GNOME's main branch often sorts below the
+release Arch ships, because releases are tagged on the stable branch.
 
 ## Going back to stock Arch
 

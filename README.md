@@ -168,9 +168,14 @@ with the drive mounted at the same path):
 ./install.sh --with-deps  # also registers the offline dependency cache
 ./install.sh --remove     # back to stock: then sudo pacman -Syuu
 ```
-Because `[gnome-git]` is listed first, a plain `pacman -Syu` keeps preferring
-your builds even when Arch ships a numerically newer release; rebuilding and
-re-running `install.sh` (or `pacman -Syu`) rolls the new commit out.
+Repository order does not decide upgrades. `pacman -Syu` installs the highest
+version it can see, wherever it comes from, and order only breaks ties. That
+matters here because GNOME tags releases on the stable branch, so `git
+describe` on main yields `51.beta.r162`, which sorts below the `51.0` Arch
+ships: without help, a plain `-Syu` would quietly replace these builds with
+Arch's. `GG_EPOCH_BUMP` (on by default) raises the epoch of every package we
+build, which puts it above any release. Turning it off means the newest
+version wins on its own, whoever built it.
 
 ## How a package is generated
 

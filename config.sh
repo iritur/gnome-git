@@ -66,6 +66,15 @@
 : "${GG_REMOTE_URL:=}"
 : "${GG_PUBLISH:=$GG_ROOT/publish}"
 
+# Raise the epoch of every package we build, so that pacman prefers it.
+# Repository order does NOT decide upgrades: pacman -Syu installs the highest
+# version it can see, wherever it comes from. GNOME tags releases on the
+# stable branch, so "git describe" on main yields 51.beta.r162, which sorts
+# below the 51.0 that Arch ships, and a plain -Syu would quietly replace these
+# builds with Arch's. Bumping the epoch puts them above any release.
+# Set to 0 if you would rather let the newest version win on its own.
+: "${GG_EPOCH_BUMP:=1}"
+
 # Git ref built when a module line does not name one.
 : "${GG_DEFAULT_REF:=main}"
 

@@ -168,7 +168,8 @@ pkgbuild_hash() {
     strip_ours "$tmp"
     # the blank line matches the one gen_pkgbuild leaves before its marker, so
     # this is byte for byte what the generated PKGBUILD holds above it
-    { cat "$tmp"; echo; extra_deps "$pkgbase"; extra_opts "$pkgbase"; } |
+    { cat "$tmp"; echo; extra_deps "$pkgbase"; extra_opts "$pkgbase"
+      printf 'epoch_bump=%s\n' "${GG_EPOCH_BUMP:-1}"; } |
         sha256sum | cut -d' ' -f1
     rm -f "$tmp"
 }
@@ -264,6 +265,10 @@ gen_pkgbuild() {
         done
         printf "_gg_primary='%s'\n" "$primary"
         printf "_gg_src='%s'\n" "$GG_SRC"
+        # Outrank whatever Arch ships. pacman -Syu takes the highest version,
+        # not the first repository, and a git build of main usually sorts
+        # below the release Arch packages (51.beta.r162 is less than 51.0).
+        (( ${GG_EPOCH_BUMP:-1} )) && printf 'epoch=$(( ${epoch:-0} + 1 ))\n'
         mapfile -t extra < <(extra_deps "$pkgbase")
         (( ${#extra[@]} )) && { printf 'makedepends+=('; printf "'%s' " "${extra[@]}"; printf ')\n'; }
         mapfile -t extra < <(extra_opts "$pkgbase")
