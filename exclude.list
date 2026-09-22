@@ -14,7 +14,9 @@
 # demo and example programs: gtk4-demo, gtk4-widget-factory,
 # gtk4-print-editor, gtk4-node-editor, and the libadwaita demo
 gtk4-demos
-libadwaita-demos
+gtk4-widget-factory
+gtk4-print-editor
+gtk4-node-editor
 
 # the vte sample terminals (vte-2.91, vte-2.91-gtk4). The vte3/vte4 libraries
 # themselves stay: Console and Ptyxis are built on them

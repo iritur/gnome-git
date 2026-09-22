@@ -1,0 +1,104 @@
+do not build unchanged pkgs
+use all availabale cpu cores for build
+what dependencies do we use?
+
+fix:
+[dimmus@iritur ~]$ gnome-builder 
+gnome-builder: error while loading shared libraries: libgom-1.0.so.0: cannot open shared object file: No such file or directory
+
+fix errors and deps-failed:
+glib2                      ok
+gobject-introspection      deps-failed
+libsoup3                   up-to-date
+json-glib                  ok
+gsettings-desktop-schemas  deps-failed
+pango                      ok
+gtk4                       ok
+libadwaita                 ok
+gtksourceview5             ok
+vte3                       up-to-date
+gcr-4                      ok
+libsecret                  ok
+dconf                      up-to-date
+gjs                        ok
+libpeas-2                  up-to-date
+libdex                     up-to-date
+libspelling                ok
+libshumate                 ok
+libgweather-4              ok
+gnome-desktop              deps-failed
+gnome-online-accounts      deps-failed
+evolution-data-server      deps-failed
+libgtop                    ok
+gnome-bluetooth-3.0        up-to-date
+tinysparql                 ok
+localsearch                ok
+gvfs                       ok
+gnome-autoar               up-to-date
+gexiv2                     ok
+adwaita-icon-theme         FAILED
+gnome-backgrounds          up-to-date
+gnome-menus                up-to-date
+gnome-settings-daemon      ok
+mutter                     up-to-date
+gnome-shell                ok
+gnome-shell-extensions     up-to-date
+gnome-session              ok
+gnome-control-center       ok
+gdm                        ok
+nautilus                   ok
+papers                     ok
+sushi                      ok
+xdg-desktop-portal-gnome   ok
+gnome-keyring              ok
+gnome-user-share           up-to-date
+gnome-remote-desktop       up-to-date
+gnome-initial-setup        up-to-date
+gnome-user-docs            ok
+orca                       ok
+gnome-tour                 up-to-date
+gnome-text-editor          ok
+gnome-console              up-to-date
+gnome-calculator           ok
+gnome-calendar             ok
+gnome-contacts             ok
+gnome-clocks               ok
+gnome-weather              up-to-date
+gnome-maps                 ok
+gnome-music                up-to-date
+gnome-characters           up-to-date
+gnome-font-viewer          ok
+gnome-logs                 up-to-date
+gnome-disk-utility         ok
+gnome-system-monitor       ok
+gnome-tweaks               up-to-date
+loupe                      ok
+snapshot                   up-to-date
+decibels                   ok
+showtime                   ok
+baobab                     up-to-date
+file-roller                up-to-date
+simple-scan                ok
+yelp                       up-to-date
+epiphany                   ok
+gnome-software             ok
+gnome-connections          up-to-date
+vala                       up-to-date
+gi-docgen                  up-to-date
+gtk-doc                    ok
+blueprint-compiler         up-to-date
+template-glib              up-to-date
+jsonrpc-glib               up-to-date
+libgit2-glib               up-to-date
+libpanel                   ok
+gom                        ok
+sysprof                    ok
+glycin                     up-to-date
+d-spy                      ok
+devhelp                    up-to-date
+gnome-builder              up-to-date
+ptyxis                     up-to-date
+gnome-terminal             ok
+  -> repo: /mnt/gnome/gnome-git/repo (156 package files)
+==> WARNING: 6 module(s) need attention; logs in /mnt/gnome/gnome-git/logs
+

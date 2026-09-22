@@ -187,14 +187,15 @@ gen_pkgbuild() {
     done < <(srcinfo_field "$info" source)
     [[ -n $primary ]] || return 4
 
-    # Drop version constraints on packages we build ourselves, so that a git
-    # version such as 51.alpha.r12 is not rejected against mutter>=51.0.
-    # Two guards keep this from eating meson options that happen to share a
-    # name with one of our packages ("-D sysprof=enabled" is not a constraint):
-    # skip any line carrying a -D option, and require a digit after the
-    # operator, which every real version has and no feature value does.
+    # Drop version constraints on packages we build ourselves. A git version
+    # such as 51.alpha.r12 would be rejected against mutter>=51.0, and the
+    # exact-version ties between split packages of one PKGBUILD
+    # (libgoa=$pkgver-$pkgrel) can never be met either: dependencies are
+    # resolved before pkgver() has replaced the released version with the git
+    # one. Lines carrying a -D option are left alone, so a meson option that
+    # shares a name with one of our packages survives ("-D sysprof=enabled").
     for n in "${!OURS[@]}"; do
-        sed -i -E "/-D/!{ s/(^|[[:space:](\"'])(${n//[.+]/\\&})(>=|<=|>|<|=)[0-9][^\"'[:space:])]*/\1\2/g }" "$dest/PKGBUILD"
+        sed -i -E "/-D/!{ s/(^|[[:space:](\"'])(${n//[.+]/\\&})(>=|<=|>|<|=)[^\"'[:space:])]+/\1\2/g }" "$dest/PKGBUILD"
     done
 
     {

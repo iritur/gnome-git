@@ -1,0 +1,46 @@
+# Override: upstream main no longer ships cursors in this repository, so the
+# adwaita-cursors split package that Arch builds from the release has nothing
+# to move and package_adwaita-icon-theme() fails on the mv. Only the icon
+# theme is built here; the cursors keep coming from Arch's own package, which
+# is still built from the last release that contained them.
+#
+# Drop this override once the cursors are packaged from wherever upstream
+# moved them, and the Arch PKGBUILD follows.
+
+pkgname=adwaita-icon-theme
+pkgver=51.0
+pkgrel=1
+pkgdesc="GNOME standard icons"
+url="https://gitlab.gnome.org/GNOME/adwaita-icon-theme"
+arch=(any)
+license=("CC-BY-SA-3.0 OR LGPL-3.0-only")
+depends=(
+  adwaita-cursors
+  adwaita-icon-theme-legacy
+  hicolor-icon-theme
+)
+makedepends=(
+  git
+  gtk-update-icon-cache
+  meson
+)
+source=("git+https://gitlab.gnome.org/GNOME/adwaita-icon-theme.git")
+b2sums=('SKIP')
+
+build() {
+  arch-meson $pkgname build
+  meson compile -C build
+}
+
+check() {
+  meson test -C build --print-errorlogs
+}
+
+package() {
+  meson install -C build --no-rebuild --destdir "$pkgdir"
+
+  # covered by common licenses
+  rm -rf "$pkgdir/usr/share/licenses"
+}
+
+# vim:set sw=2 sts=-1 et:
